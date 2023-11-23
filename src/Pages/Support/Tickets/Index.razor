@@ -1,0 +1,309 @@
+@page "/support/ticket"
+
+@using Delivery3Admin.Models.Tickets
+@using Delivery3Admin.Services
+@using Newtonsoft.Json
+
+@inject IJSRuntime JsRuntime
+@inject DataRequest DataRequest
+
+<div class="d-flex flex-column flex-column-fluid">
+    <div id="kt_app_toolbar" class="app-toolbar mt-8">
+        <div id="kt_app_toolbar_container" class="app-container container-xxl d-flex flex-stack">
+            <div class="page-title d-flex flex-column justify-content-center me-3">
+                <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0">
+                    Meus Tickets
+                </h1>
+                <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-6 my-0 pt-1">
+                    <li class="breadcrumb-item text-muted">
+                        <a href="/support" class="text-muted text-hover-success">
+                            Suporte
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <span class="bullet bg-gray-400 w-5px h-2px"></span>
+                    </li>
+                    <li class="breadcrumb-item text-muted">
+                        <a class="text-success">
+                            Meus Tickets
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            @if (_tickets is {Count: > 0 })
+            {
+                <div class="d-flex align-items-center gap-1">
+                    <a href="/ticket/create" target="_self" class="btn btn-sm fw-semibold btn-success">
+                        <i class="ki-duotone ki-notepad-edit">
+                            <i class="path1"></i><i class="path2"></i>
+                        </i>
+                        Criar Ticket
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+    <div id="kt_app_content" class="app-content flex-column-fluid">
+        <div id="kt_app_content_container" class="app-container container-fluid container-xxl">
+            @if (_tickets is {Count: > 0 })
+            {
+                <div class="d-flex flex-column flex-lg-row">
+                    <div class="flex-column flex-lg-row-auto w-100 w-lg-300px w-xl-400px mb-10 mb-lg-0">
+                        <div class="card card-flush" style="min-height: 658px; max-height: 658px;">
+                            <div class="card-body pt-5" id="kt_chat_contacts_body" style="height: 588px;">
+                                <div class="scroll-y me-n5 pe-5 h-200px h-lg-auto" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_header, #kt_app_header, #kt_toolbar, #kt_app_toolbar, #kt_footer, #kt_app_footer, #kt_chat_contacts_header" data-kt-scroll-wrappers="#kt_content, #kt_app_content, #kt_chat_contacts_body" data-kt-scroll-offset="5px" style="max-height: 552px;">
+                                    @foreach (TicketModel? ticket in _tickets.OrderBy(x => x!.Status))
+                                    {
+                                        <div class="d-flex flex-stack py-4 p-0 bg-hover-light bg-active-light" @onclick="async () => await FocusOnTicket(ticket!.Id)">
+                                            <div class="d-flex align-items-center px-4 py-1">
+                                                <div class="symbol symbol-45px symbol-circle">
+                                                    <span class="fs-6 fw-bolder">
+                                                        @if (ticket!.Id == _ticketId)
+                                                        {
+                                                            <div class="position-absolute start-0 top-0 w-4px h-100 rounded-2 bg-success" style="margin-left: -13px;"></div>
+                                                        }
+                                                        <div class="cursor-pointer symbol symbol-30px symbol-md-35px" style="margin-top: 0.2rem">
+                                                            <img class="symbol symbol-circle symbol-30px symbol-md-35px" src="@(_ticket!.Store!.LogoUrl)" alt="@(_ticket!.Store!.LogoUrl)"/>
+                                                        </div>
+                                                    </span>
+                                                </div>
+                                                <div class="ms-5">
+                                                    <a class="fs-5 fw-bold text-gray-900 mb-2">@ticket!.Store!.Name</a>
+                                                    <div class="fw-semibold text-muted">@ticket.Store!.Email</div>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex flex-column align-items-end ms-2">
+                                                <span class="badge badge-@(ticket.Status == 1 ? "success" : "warning") badge-circle w-10px h-10px me-1"></span>
+                                            </div>
+                                        </div>
+                                        <div class="separator separator-dashed d-none"></div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-lg-row-fluid ms-lg-7 ms-xl-10">
+                        @if (_ticket != null)
+                        {
+                            <div class="card">
+                                <div class="card-header" id="kt_chat_messenger_header">
+                                    <div class="card-title">
+                                        <div class="d-flex justify-content-center flex-column me-3">
+                                            <a class="fs-4 fw-bold text-gray-900 me-1 mb-2 lh-1">@_ticket.Title</a>
+                                            <div class="mb-0 lh-1">
+                                                @if (_ticket.Status == 1)
+                                                {
+                                                    <span class="badge badge-success badge-circle w-10px h-10px me-1"></span>
+                                                    <span class="fs-7 fw-semibold text-muted">Aberto</span>
+                                                    <span class="text-muted">-></span>
+                                                    @* <span class="fs-7 fw-semibold text-muted">Criado à(s) @DateTimeUtils.GetFormattedDiffTime(_ticket.CreatedAt)</span> *@
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge badge-warning badge-circle w-10px h-10px me-1"></span>
+                                                    <span class="fs-7 fw-semibold text-muted">Fechado</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body" id="kt_chat_messenger_body" style="min-height: 500px;">
+                                    <div class="scroll-y me-n5 pe-5 h-300px h-lg-auto" data-kt-element="messages" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_header, #kt_app_header, #kt_app_toolbar, #kt_toolbar, #kt_footer, #kt_app_footer, #kt_chat_messenger_header, #kt_chat_messenger_footer" data-kt-scroll-wrappers="#kt_content, #kt_app_content, #kt_chat_messenger_body" data-kt-scroll-offset="5px" style="min-height: 400px; max-height: 300px">
+                                        <div class="d-flex justify-content-start mb-10 ">
+                                            <div class="d-flex flex-column align-items-start">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <div class="symbol symbol-30px symbol-md-35px">
+                                                        <img class="symbol symbol-circle symbol-30px symbol-md-35px" alt="@_ticket!.Store!.LogoUrl" src="@_ticket!.Store!.LogoUrl"/>
+                                                    </div>
+                                                    <div class="ms-3">
+                                                        <a class="fs-5 fw-bold text-gray-900 me-1">@_ticket.Store.Name</a>
+                                                        @* <span class="text-muted fs-7 mb-1">@DateTimeUtils.GetFormattedDiffTime(_ticket.CreatedAt)</span> *@
+                                                    </div>
+                                                </div>
+                                                <div class="p-5 rounded bg-light-info text-dark fw-semibold mw-lg-400px text-start" data-kt-element="message-text">
+                                                    @_ticket.Body
+                                                </div>
+                                                @if (!string.IsNullOrEmpty(_ticket.ImageUrl))
+                                                {
+                                                    <div class="p-1"></div>
+                                                    <div class="p-5 rounded bg-light-info text-dark fw-semibold mw-lg-400px text-start" data-kt-element="message-text">
+                                                        <div class="image-input image-input-empty image-input-outline image-input-placeholder mb-0 me-0" style="background-size: contain; background-position: center;">
+                                                            <div class="image-input-wrapper size" style="background-image: url(@(_ticket.ImageUrl)">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                        @if (_ticket.TicketAnswer != null)
+                                        {
+                                            @foreach (TicketAnswerModel ticketAnswer in _ticket.TicketAnswer)
+                                            {
+                                                @if (!ticketAnswer.IsStoreAnswer)
+                                                {
+                                                    <div class="d-flex justify-content-end mb-10 ticket-answer">
+                                                        <div class="d-flex flex-column align-items-end">
+                                                            <div class="d-flex align-items-center mb-2">
+                                                                <div class="me-3">
+                                                                    @* <span class="text-muted fs-7 mb-1">@(DateTimeUtils.GetFormattedDiffTime(ticketAnswer.CreatedAt))</span> *@
+                                                                    <a class="fs-5 fw-bold text-gray-900 ms-1">@("Delivery3")</a>
+                                                                </div>
+                                                                <div class="symbol symbol-45px symbol-circle">
+                                                                    <span class="symbol-label bg-light-danger text-danger fs-6 fw-bolder"></span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="p-5 rounded bg-light-primary text-dark fw-semibold mw-lg-400px text-end" data-kt-element="message-text">
+                                                                @(ticketAnswer.Body)
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="d-flex justify-content-start ticket-answer mb-10">
+                                                        <div class="d-flex flex-column align-items-start">
+                                                            <div class="d-flex align-items-center mb-2">
+                                                                <div class="symbol symbol-40px symbol-circle">
+                                                                    <span class="symbol-label bg-light-danger text-danger fs-6 fw-bolder">@_ticket.Store.LogoUrl</span>
+                                                                </div>
+                                                                <div class="ms-3">
+                                                                    <a class="fs-5 fw-bold text-gray-900 me-1">@_ticket.Store.Name</a>
+                                                                    @* <span class="text-muted fs-7 mb-1">@(DateTimeUtils.GetFormattedDiffTime(ticketAnswer.CreatedAt))</span> *@
+                                                                </div>
+                                                            </div>
+                                                            <div class="p-5 rounded bg-light-info text-dark fw-semibold mw-lg-400px text-start" data-kt-element="message-text">
+                                                                @(ticketAnswer.Body)
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            }
+                                        }
+                                    </div>
+                                    <div class="card-footer pt-4" id="kt_chat_messenger_footer">
+                                        <textarea class="form-control form-control-flush mb-3" rows="1" data-kt-element="input" placeholder="Escreva uma resposta" @bind="_bodyAnswer"></textarea>
+                                        <div class="d-flex flex-stack">
+                                            <div class="d-flex align-items-center me-2">
+                                            </div>
+                                            <button class="btn btn-bg-success btn-color-white" type="button" data-kt-element="send" @onclick="async () => await SubmitAndSaveAnswerAsync()">Enviar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card">
+                    <div class="card-body">
+                        <div class="card-px text-center pt-15 pb-15">
+                            <h2 class="fs-2x fw-bold mb-0">Parece que você nenhum ticket...</h2>
+                            <p class="text-gray-400 fs-4 fw-semibold py-7">
+                                Clique no botão abaixo para ser redirecionado(a) <br>à seção de criação de tickets.
+                            </p>
+                            <a href="/ticket/create" target="_self" class="btn btn-sm fw-semibold btn-success" style="margin-bottom: -50px; width: 15rem;">
+                                <i class="ki-duotone ki-notepad-edit">
+                                    <i class="path1"></i><i class="path2"></i>
+                                </i>
+                                Criar Ticket
+                            </a>
+                        </div>
+                        <div class="text-center pb-15 px-5">
+                            <img src="/media/illustrations/4.png" alt="/media/illustrations/4.png" class="mw-100 h-200px h-sm-325px">
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<TicketModel?>? _tickets { get; set; }
+    private TicketModel? _ticket { get; set; }
+
+    private string? _bodyAnswer;
+    private int _ticketId;
+
+    private bool _isLoading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        await Task.Delay(TimeSpan.FromSeconds(0.5));
+
+        ApiResponse response = await DataRequest.SendAsync(HttpMethod.Get, "/Admin");
+        _isLoading = false;
+        if (!response.IsSuccessRequest)
+        {
+            await JsRuntime.InvokeVoidAsync("Toastr.Warning", response.Error);
+            return;
+        }
+
+        _tickets = JsonConvert.DeserializeObject<List<TicketModel?>>(response.Json ?? string.Empty);
+
+        if (_tickets is {Count: >= 1 })
+        {
+            _ticket = _tickets.FirstOrDefault();
+            _ticketId = _ticket!.Id;
+            
+            await FocusOnTicket(_ticketId);
+        }
+    }
+
+    // protected override async Task OnAfterRenderAsync(bool firstRender)
+    // {
+    //     if (firstRender)
+    //     {
+    //         await ScrollToEnd();
+    //     }
+    //
+    //     await ScrollToEnd();
+    // }
+
+    async Task FocusOnTicket(int ticketId)
+    {
+        _ticket = _tickets?.FirstOrDefault(x => x!.Id == ticketId);
+
+        if (_ticket == null)
+            await JsRuntime.InvokeVoidAsync("Toastr.Warning", "Ticket não encontrado.");
+        else
+            _ticketId = ticketId;
+    }
+
+    async Task SubmitAndSaveAnswerAsync()
+    {
+        await Task.Delay(TimeSpan.FromSeconds(0.3));
+        _isLoading = true;
+        if (string.IsNullOrEmpty(_bodyAnswer))
+            return;
+
+        _tickets?.Where(x => x != null && x.Id == _ticketId).FirstOrDefault()?.TicketAnswer?.Add(new TicketAnswerModel
+        {
+            Body = _bodyAnswer
+        });
+
+        await Task.Delay(TimeSpan.FromSeconds(0.2));
+
+        // await ScrollToEnd();
+
+        ApiResponse response = await DataRequest.SendAsync(HttpMethod.Post, "/TicketAnswer", new { TicketId = _ticketId, Body = _bodyAnswer });
+        _isLoading = false;
+        if (!response.IsSuccessRequest)
+        {
+            await JsRuntime.InvokeVoidAsync("Toastr.Warning", response.Error);
+            return;
+        }
+
+        _bodyAnswer = null;
+
+        StateHasChanged();
+    }
+
+    // async Task ScrollToEnd()
+    // {
+    //     await JsRuntime.InvokeVoidAsync("ScrollToJs.LastTicketAnswer");
+    // }
+}

@@ -1,0 +1,35 @@
+﻿@using Delivery3Admin.Models.Stores
+@using System.Security.Claims
+@using Delivery3Admin.Services
+@using Newtonsoft.Json
+
+@inherits LayoutComponentBase
+
+@* @inject JSRuntime JsRuntime *@
+@inject DataRequest DataRequest
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<PageTitle>Portal Delivery3 Admin</PageTitle>
+
+<div class="d-flex flex-column flex-root app-root" id="kt_app_root">
+    <div class="app-page flex-column flex-column-fluid" id="kt_app_page">
+        <AuthorizeView>
+            <Authorized>
+                <Header> </Header>
+                <div class="app-wrapper flex-column flex-row-fluid" id="kt_app_wrapper">
+                    <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
+                        @Body
+                    </div>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                @Body
+            </NotAuthorized>
+        </AuthorizeView>
+    </div>
+</div>
+
+@code
+{
+}

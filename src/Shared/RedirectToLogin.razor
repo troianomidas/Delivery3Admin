@@ -1,0 +1,14 @@
+﻿@using System.Security.Claims
+@inject ILogger<RedirectToLogin> Logger
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+@code
+{
+    protected override async Task OnInitializedAsync()
+    {
+        AuthenticationState resp = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (!resp.User.Identity?.IsAuthenticated ?? true)
+            NavigationManager.NavigateTo("/signin", true);
+    }
+}
